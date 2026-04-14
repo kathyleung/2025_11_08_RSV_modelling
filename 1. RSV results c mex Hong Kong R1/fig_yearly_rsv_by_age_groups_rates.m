@@ -1,0 +1,116 @@
+function [out, rec] = fig_yearly_rsv_by_age_groups_rates(mcRecMonthlyByAgePrctile, monthlyCaseRSV, populationAgeGroup, dateZero, cutoffCOVID)
+    % 6 subplots (one per age group), each showing grouped bars of
+    % estimated vs observed RSV cases per 100,000 for each year 2015-2019.
+
+    % Population denominator
+    populationAgeGroupMean = mean(populationAgeGroup, 1);
+
+    % Convert model estimates to rates per 100,000
+    mtrSize = size(mcRecMonthlyByAgePrctile);
+    mcRates = mcRecMonthlyByAgePrctile ./ repmat(populationAgeGroupMean, mtrSize(1), 1, mtrSize(3)) * 100000;
+
+    % Cut off data at COVID
+    monthlyCaseRSV = monthlyCaseRSV(monthlyCaseRSV.month_start < cutoffCOVID, :);
+
+    % Add year column
+    monthlyCaseRSV.Year = year(dateZero + monthlyCaseRSV.month_start);
+
+    % Filter to 2015-2019
+    targetYears = (2015:2019)';
+    yearMask = ismember(monthlyCaseRSV.Year, targetYears);
+    monthlyCaseRSV = monthlyCaseRSV(yearMask, :);
+    mcRates = mcRates(yearMask, :, :);
+
+    if isempty(monthlyCaseRSV)
+        error('No data available for 2015-2019.');
+    end
+
+    numAgeGroups = 6;
+    numYears = length(targetYears);
+
+    age_labels = {'0-5 months', '6-11 months', '1-4 years', '5-64 years', '65-74 years', '75+ years'};
+
+    modelColor    = [0, 0.4470, 0.7410];
+    observedColor = [0.8500, 0.3250, 0.0980];
+
+    % Pre-compute yearly totals per age group (rates per 100,000)
+    yearly_obs = zeros(numYears, numAgeGroups);
+    yearly_med = zeros(numYears, numAgeGroups);
+    yearly_lo  = zeros(numYears, numAgeGroups);
+    yearly_hi  = zeros(numYears, numAgeGroups);
+
+    for ag = 1:numAgeGroups
+        data_col = ag + 3;
+        for yy = 1:numYears
+            yidx = monthlyCaseRSV.Year == targetYears(yy);
+            yearly_obs(yy, ag) = sum(monthlyCaseRSV{yidx, data_col}) / populationAgeGroupMean(ag) * 100000;
+            yearly_med(yy, ag) = sum(mcRates(yidx, ag, 1));
+            yearly_lo(yy, ag)  = sum(mcRates(yidx, ag, 2));
+            yearly_hi(yy, ag)  = sum(mcRates(yidx, ag, 3));
+        end
+    end
+
+    rec = cat(3, yearly_med, yearly_lo, yearly_hi);  % numYears x numAgeGroups x 3
+
+    % --- Create figure ---
+    fig_handle = figure(13);
+    clf;
+
+    for ag = 1:numAgeGroups
+        ax = subplot(3, 2, ag);
+        hold(ax, 'on');
+
+        % Grouped bar data: [Observed, Model]
+        groupedData = [yearly_obs(:, ag), yearly_med(:, ag)];
+        b = bar(ax, targetYears, groupedData, 'grouped');
+
+        % Style bars
+        b(1).FaceColor = observedColor;
+        b(1).EdgeColor = 'none';
+        b(1).FaceAlpha = 0.7;
+        b(2).FaceColor = modelColor;
+        b(2).EdgeColor = 'none';
+        b(2).FaceAlpha = 0.7;
+
+        % Error bars on model bars
+        err_lo = yearly_med(:, ag) - yearly_lo(:, ag);
+        err_hi = yearly_hi(:, ag) - yearly_med(:, ag);
+        xCenters = b(2).XEndPoints;
+        errorbar(ax, xCenters, yearly_med(:, ag), err_lo, err_hi, ...
+            'k', 'linestyle', 'none', 'LineWidth', 0.6, 'CapSize', 3);
+
+        % Formatting
+        ylimArr = [10000, 5000, 2000, 20, 60, 400];
+        title(ax, age_labels{ag}, 'FontSize', 10);
+        set(ax, 'XTick', targetYears);
+        xlim(ax, [min(targetYears)-0.5, max(targetYears)+0.5]);
+        ylim(ax, [0, ylimArr(ag)]);
+        box(ax, 'off');
+        ax.TickDir = 'out';
+
+        % Y label on left-side subplots
+        if mod(ag, 2) == 1
+            ylabel(ax, 'Cases per 100,000', 'FontSize', 10);
+        end
+
+        % X label on bottom subplots only; hide tick labels on upper rows
+        if ag > 4
+            xlabel(ax, 'Year', 'FontSize', 10);
+        else
+            xticklabels(ax, {});
+        end
+
+        % Legend in first subplot
+        if ag == 1
+            lgd = legend(ax, {'Observed', 'Model Estimate'}, 'FontSize', 8, 'Location', 'northeast');
+            lgd.Box = 'off';
+        end
+
+        hold(ax, 'off');
+    end
+
+    sgtitle('Yearly Reported RSV Cases per 100,000 by Age Group (2015-2019)', ...
+        'FontSize', 12, 'FontWeight', 'bold');
+
+    out = fig_handle;
+end
