@@ -130,9 +130,9 @@ for iiMonth = 1:length(monthlyILIUse.month_start)
 end
 monthlyReport = sum(monthlyIncidence.*repmat(epsilonByAge,length(monthlyILIUse.month_start),1),2);
 % Poisson likelihood
-% logLikelihoodMonthlyLabRSV = log(poisspdf(monthlyILIUse.num_monthly_RSV_pos,monthlyReport));
+logLikelihoodMonthlyLabRSV = log(poisspdf(monthlyILIUse.num_monthly_RSV_pos,monthlyReport));
 % Negative binomial likelihood
-logLikelihoodMonthlyLabRSV = log(nbinpdf(round(sum(monthlyIncidence,2)-monthlyILIUse.num_monthly_RSV_pos),monthlyILIUse.num_monthly_RSV_pos,monthlyReport./sum(monthlyIncidence,2)));
+% logLikelihoodMonthlyLabRSV = log(nbinpdf(round(sum(monthlyIncidence,2)-monthlyILIUse.num_monthly_RSV_pos),monthlyILIUse.num_monthly_RSV_pos,1./(1+monthlyReport./sum(monthlyIncidence,2))));
 logLikelihoodMonthlyLabRSV(logLikelihoodMonthlyLabRSV==-Inf) = -1e9;
 logLikelihoodMonthlyLabRSV(isnan(logLikelihoodMonthlyLabRSV)) = -1e9;
 

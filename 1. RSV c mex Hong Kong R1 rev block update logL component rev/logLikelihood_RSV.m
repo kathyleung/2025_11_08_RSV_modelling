@@ -124,9 +124,9 @@ for iiWeek = 1:length(weeklyLabUse.week_num)
 end
 weeklyReport = sum(weeklyAgeSpecificIncidence.*repmat(epsilonByAge,length(weeklyLabUse.week_num),1),2);
 % Poisson likelihood
-% logLikelihoodWeeklyLabRSV = log(poisspdf(weeklyLabUse.num_RSV,weeklyReport));
+logLikelihoodWeeklyLabRSV = log(poisspdf(weeklyLabUse.num_RSV,weeklyReport));
 % Negative binomial likelihood
-logLikelihoodWeeklyLabRSV = log(nbinpdf(round(sum(weeklyAgeSpecificIncidence,2)-weeklyLabUse.num_RSV),weeklyLabUse.num_RSV,weeklyReport./sum(weeklyAgeSpecificIncidence,2)));
+% logLikelihoodWeeklyLabRSV = log(nbinpdf(round(sum(weeklyAgeSpecificIncidence,2)-weeklyLabUse.num_RSV),weeklyLabUse.num_RSV,1./(1+weeklyReport./sum(weeklyAgeSpecificIncidence,2))));
 logLikelihoodWeeklyLabRSV(logLikelihoodWeeklyLabRSV==-Inf) = -1e9;
 logLikelihoodWeeklyLabRSV(isnan(logLikelihoodWeeklyLabRSV)) = -1e9;
 
