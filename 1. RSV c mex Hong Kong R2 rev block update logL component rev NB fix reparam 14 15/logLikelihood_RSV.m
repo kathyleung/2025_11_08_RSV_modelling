@@ -126,8 +126,6 @@ for iiWeek = 1:length(weeklyLabUse.week_num)
     weeklyAgeSpecificIncidence(iiWeek,:) = sum(outSEIR.stateZ(indicesForWeekly{iiWeek},:),1);
 end
 weeklyReport = sum(weeklyAgeSpecificIncidence.*repmat(epsilonByAge,length(weeklyLabUse.week_num),1),2);
-% Poisson likelihood
-% logLikelihoodWeeklyLabRSV = log(poisspdf(weeklyLabUse.num_RSV,weeklyReport));
 % Linear-dispersion negative binomial likelihood with
 % Var(Y) = mu * (1 + linDispWeeklyLab).
 meanFloorWeeklyLab = 1e-6;
@@ -153,8 +151,6 @@ monthlyReportByAge = [...
     sum(monthlyReport(:,indicesMonthlyRSV(3):(indicesMonthlyRSV(4)-1)),2),...
     sum(monthlyReport(:,indicesMonthlyRSV(4):(indicesMonthlyRSV(5)-1)),2),...
     sum(monthlyReport(:,indicesMonthlyRSV(5):(indicesMonthlyRSV(6)-1)),2)];
-% Poisson likelihood
-% logLikelihoodMonthlyReportByAge = log(poisspdf(monthlyCaseRSVUse{:,{'num_lab_RSV_0_5_month','num_lab_RSV_6_11_month','num_lab_RSV_1_4_yr','num_lab_RSV_5_64_yr','num_lab_RSV_65_74','num_lab_RSV_75_yr_above'}},monthlyReportByAge));
 % Multinormial likelihood
 logLikelihoodMonthlyReportByAge = log(...
     mnpdf(monthlyCaseRSVUse{:,{'num_lab_RSV_0_5_month','num_lab_RSV_6_11_month','num_lab_RSV_1_4_yr','num_lab_RSV_5_64_yr','num_lab_RSV_65_74','num_lab_RSV_75_yr_above'}},...
